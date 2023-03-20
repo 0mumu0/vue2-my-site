@@ -1,30 +1,44 @@
 <template>
-  <div class="blog-list-container" ref="container" v-loading="isLoading">
+  <div class="blog-list-container" ref="mainContainer" v-loading="isLoading">
     <ul>
       <li v-for="item in data.rows" :key="item.id">
         <div class="thumb" v-if="item.thumb">
-          <RouterLink :to="{name:'BlogDetail',params:{
-            id:item.id
-          }}">
+          <RouterLink
+            :to="{
+              name: 'BlogDetail',
+              params: {
+                id: item.id,
+              },
+            }"
+          >
             <img :src="item.thumb" :alt="item.title" :title="item.title" />
           </RouterLink>
         </div>
         <div class="main">
-          <RouterLink :to="{name:'BlogDetail',params:{
-            id:item.id
-          }}">
+          <RouterLink
+            :to="{
+              name: 'BlogDetail',
+              params: {
+                id: item.id,
+              },
+            }"
+          >
             <h2>{{ item.title }}</h2>
           </RouterLink>
           <div class="aside">
             <span>日期：{{ formatDate(item.createDate) }}</span>
             <span>浏览：{{ item.scanNumber }}</span>
             <span>评论{{ item.commentNumber }}</span>
-            <RouterLink :to="{
-              name:'CategoryBlog',
-              params:{
-                categoryId:item.category.id
-              }
-            }" class="">{{ item.category.name }}</RouterLink>
+            <RouterLink
+              :to="{
+                name: 'CategoryBlog',
+                params: {
+                  categoryId: item.category.id,
+                },
+              }"
+              class=""
+              >{{ item.category.name }}</RouterLink
+            >
           </div>
           <div class="desc">
             {{ item.description }}
@@ -72,25 +86,32 @@ export default {
   },
   created() {
     console.log("axxxxx", this.$route, this.routeInfo);
+    this.$bus.$on("setMainScroll", this.handleSetMainScroll);
   },
-  watch:{
-    async $route(newVal,oldVal){
+  mounted() {
+    this.$refs.mainContainer.addEventListener("scroll", this.handleScroll);
+  },
+  beforeDestroy() {
+    this.$bus.$emit("mainScroll");
+    this.$refs.mainContainer.removeEventListener("scroll", this.handleScroll);
+    this.$bus.$off("setMainScroll", this.handleSetMainScroll);
+  },
+  watch: {
+    async $route(newVal, oldVal) {
       this.isLoading = true;
       //滚动高度为0
-      this.$refs.container.scrollTop=0
+      this.$refs.container.scrollTop = 0;
 
-      if(!this.data){//因为数据随机获取，总条数不定，所以只有第一次赋值总条数
-      this.data = await this.fetchData()
-        
-      }else{
-      let {rows} = await this.fetchData()
-      this.data.rows = rows
-
+      if (!this.data) {
+        //因为数据随机获取，总条数不定，所以只有第一次赋值总条数
+        this.data = await this.fetchData();
+      } else {
+        let { rows } = await this.fetchData();
+        this.data.rows = rows;
       }
-      
-      this.isLoading = false
 
-    }
+      this.isLoading = false;
+    },
   },
   methods: {
     async fetchData() {
@@ -125,9 +146,15 @@ export default {
         });
       }
     },
+    handleScroll() {
+      // console.log("滚动条变化");
+      this.$bus.$emit("mainScroll", this.$refs.mainContainer);
+    },
+    handleSetMainScroll(scrollTop) {
+      this.$refs.mainContainer.scrollTop = scrollTop;
+    },
   },
 };
-
 </script>
 
 <style scoped lang="less">
@@ -140,7 +167,7 @@ export default {
   width: 100%;
   height: 100%;
   box-sizing: border-box;
-  scroll-behavior: smooth;//平滑滚动
+  scroll-behavior: smooth; //平滑滚动
   ul {
     list-style: none;
     margin: 0;

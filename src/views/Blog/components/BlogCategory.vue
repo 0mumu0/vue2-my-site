@@ -45,7 +45,9 @@ export default {
   },
   methods: {
     async fetchData() {
-      return await getBlogCategories();
+      let data = await getBlogCategories();
+      console.log(data);
+      return data
     },
     handleSelect(item) {
       const query = {

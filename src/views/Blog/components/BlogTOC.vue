@@ -1,15 +1,15 @@
 <template>
-  <div class="blog-toc-container" v-loading="isLoading">
+  <div class="blog-toc-container">
     <h2>目录</h2>
 
-    <RightList :list="toc" @select="handleSelect" />
+    <RightList :list="toWithSelect" @select="handleSelect" />
   </div>
 </template>
 
 <script>
-// import fetchData from "@/mixins/fetchData.js";
-// import { getBlogCategories } from "@/api/blog.js";
+
 import RightList from "./RightList";
+import {debounce } from "@/utils";
 export default {
   components: {
     RightList,
@@ -20,41 +20,83 @@ export default {
       default:()=>{}
     }
   },
-  // mixins: [fetchData([])],
   data() {
-    return {};
+    return {
+      activeAnchor:'',//目前激活的锚点
+    };
   },
   computed: {
-    // categoryId() {
-    //   return +this.$route.params.categoryId || -1;
-    // },
-    // limit() {
-    //   return +this.$route.query.limit || 10;
-    // },
-    // list() {
-    //   const totalArticleCount = this.data.reduce(
-    //     (a, b) => a + b.articleCount,
-    //     0
-    //   );
-    //   const result = [
-    //     { name: "全部", id: -1, articleCount: totalArticleCount },
-    //     ...this.data,
-    //   ];
+    // 根据toc属性以及activeAnchor得到带有isSelect属性的toc数组
+    toWithSelect(){
+      const getTOC = (toc=[])=>{
+        return toc.map(t=>({
+          ...t,
+          isSelect:t.anchor === this.activeAnchor,
+          children:getTOC(t.children)
+        }))
+      }
+      return getTOC(this.toc)
+    },
+    // 根据toc得到它们对应的元素数组
+    doms(){
+      const doms = []
+      const addToDoms = toc=>{
+        for (const t of toc) {
+          console.log(t.anchor)
+          doms.push(document.getElementById(t.anchor))
+          if(t.children && t.children.length){
+            addToDoms(t.children)
+          }
+        }
+      }
+      addToDoms(this.toc)
+      return doms
 
-    //   return result.map((it) => ({
-    //     ...it,
-    //     isSelect: this.categoryId === it.id,
-    //     aside: `${it.articleCount}篇`
-    //   }));
-    // },
+    }
   },
+  created(){
+    this.setSelectDebounce = debounce(this.setSelect,50)
+    this.$bus.$on("mainScroll",this.setSelectDebounce)
+// this.setSelect()
+},
+
+destroyed(){
+    this.$bus.$off("mainScroll",this.setSelectDebounce)
+
+},
   methods: {
-    // async fetchData() {
-    //   return await getBlogCategories();
-    // },
+
     handleSelect(item) {
       location.hash = item.anchor
     },
+    // 设置activeAnchor为正确的值
+    setSelect(scrollDom){
+      if(!scrollDom){
+        return
+      }
+      this.activeAnchor = ''//由于后续要重新设置，先清空之前的状态
+      const range = 200
+      for (const dom of this.doms) {
+        // 看一次啊当前这个dom元素是不是应该被选中
+        if(!dom){
+          continue;
+        }
+        // 得到元素离视口顶部的距离
+      const top = dom.getBoundingClientRect().top;
+      if(top>=0&&top<=range){
+        // 在规定的范围内
+        this.activeAnchor = dom.id
+        return
+      }else if(top>range){
+        // 在规定的范围下方
+        return
+      }else{
+        // 在规定的范围上方
+        this.activeAnchor = dom.id//先假设自己是激活的，然后后续看后面，如果后面有激活就重新赋值
+
+      }
+      }
+    }
   },
 };
 </script>

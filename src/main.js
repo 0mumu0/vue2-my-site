@@ -12,6 +12,7 @@ Vue.prototype.$showMessage = showMessage ;
 import vLoading from './directives/loading'
 Vue.directive('loading',vLoading)
 
+import "./eventBus"
 import * as blogApi from './api/blog'
 
 // blogApi.getBlogTypes().then((r) =>{

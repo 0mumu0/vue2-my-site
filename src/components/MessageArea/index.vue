@@ -1,6 +1,6 @@
 <template>
   <div class="message-area-container">
-    <DataForm/>
+    <DataForm  v-on="$listeners"/>
     <h3>
         {{title}}
         <span>{{subTitle}}</span>
